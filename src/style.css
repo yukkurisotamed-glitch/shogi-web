@@ -1,0 +1,464 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cell: 60px;
+  --board-border: 2px;
+  --board-bg: #dcb468;
+  --line-color: #8b6914;
+  --bg: #1a1a2e;
+  --header-bg: #16213e;
+  --text: #e0e0e0;
+  --btn-bg: #0f3460;
+  --btn-hover: #1a5276;
+  --highlight-sel: rgba(0, 180, 255, 0.5);
+  --highlight-legal: rgba(0, 220, 100, 0.4);
+  --highlight-check: rgba(255, 50, 50, 0.6);
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ─── Layout ──────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+header {
+  width: 100%;
+  background: var(--header-bg);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+header h1 {
+  font-size: 18px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+#status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+#turn-label {
+  font-size: 14px;
+  padding: 4px 14px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+}
+
+select {
+  background: var(--btn-bg);
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus { outline: none; }
+
+button {
+  background: var(--btn-bg);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+button:hover:not(:disabled) { background: var(--btn-hover); }
+button:disabled { opacity: 0.35; cursor: default; }
+
+main {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 16px;
+}
+
+#game-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#ref-panel {
+  position: sticky;
+  top: 20px;
+  flex-shrink: 0;
+  width: calc(9 * var(--cell) + 2 * var(--board-border));
+  background: #1e2340;
+  border: 1px solid #3a4070;
+  border-radius: 10px;
+  overflow: hidden;
+}
+#ref-panel.hidden { display: none; }
+
+#ref-img {
+  width: 100%;
+  display: block;
+}
+
+/* ─── Board outer wrapper ──────────────────────────────────────── */
+#board-outer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  user-select: none;
+}
+
+/* Column labels row: corner spacer + 9 labels */
+.col-labels {
+  display: flex;
+  flex-direction: row;
+}
+
+
+.col-labels span {
+  width: var(--cell);
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  line-height: 20px;
+}
+
+/* Board + row labels side by side */
+.board-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* ─── The board grid ─────────────────────────────────────────── */
+#board {
+  display: grid;
+  grid-template-columns: repeat(9, var(--cell));
+  grid-template-rows: repeat(9, var(--cell));
+  /* Force exact size so cells can't stretch */
+  width: calc(9 * var(--cell) + 2 * var(--board-border));
+  height: calc(9 * var(--cell) + 2 * var(--board-border));
+  background: var(--board-bg);
+  border: var(--board-border) solid var(--line-color);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ─── Individual cells ───────────────────────────────────────── */
+.cell {
+  /* Let the grid track define size; just enforce the square via content */
+  width: var(--cell);
+  height: var(--cell);
+  border: 1px solid var(--line-color);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cell.selected { background: var(--highlight-sel); }
+.cell.legal    { background: var(--highlight-legal); }
+.cell.check    { background: var(--highlight-check); }
+
+
+/* ─── Piece images ───────────────────────────────────────────── */
+.piece {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Sente (player) pieces: geometrically uniform outline via SVG feMorphology */
+.piece.sente {
+  filter: url(#piece-outline);
+}
+
+/* ─── Row labels ─────────────────────────────────────────────── */
+.row-labels {
+  display: flex;
+  flex-direction: column;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.row-labels span {
+  height: var(--cell);
+  line-height: var(--cell);
+  font-size: 12px;
+  color: #aaa;
+  text-align: center;
+}
+
+/* ─── Hand (持ち駒) areas ────────────────────────────────────── */
+.hand-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  /* Match board width: 9 cells + border + row-label width */
+  width: calc(9 * var(--cell) + 2 * var(--board-border) + 28px);
+}
+
+.hand-label {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.hand-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hand-piece {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.hand-piece:hover { border-color: rgba(0,200,100,0.6); }
+.hand-piece.selected-drop {
+  border-color: rgba(0,180,255,0.9);
+  background: rgba(0,180,255,0.15);
+}
+
+.hand-piece img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.hand-piece .count {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+  line-height: 1;
+}
+
+/* ─── Product banner ─────────────────────────────────────────── */
+#product-banner {
+  width: 100%;
+  max-width: calc(9 * var(--cell) + 32px + 28px);
+  margin: 8px 0 20px;
+  padding: 20px 24px 12px;
+  background: linear-gradient(135deg, #1e2340 0%, #16213e 100%);
+  border: 1px solid #3a4070;
+  border-radius: 12px;
+}
+
+#product-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#product-img-wrap {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  background: var(--board-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#product-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: url(#piece-outline);
+}
+
+#product-text h2 {
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+#product-text p {
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+#product-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f16521;
+  color: #fff;
+  text-decoration: none;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  transition: background 0.15s;
+}
+#product-link:hover { background: #d4541a; }
+
+#product-credit {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #555;
+  text-align: right;
+}
+#product-credit a { color: #555; }
+#product-credit a:hover { color: #888; }
+
+/* ─── How-to modal ───────────────────────────────────────────── */
+#howto-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#howto-modal.hidden { display: none !important; }
+
+#howto-inner {
+  position: relative;
+  background: #1e2340;
+  border: 1px solid #3a4070;
+  border-radius: 12px;
+  padding: 40px 20px 20px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#btn-howto-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: transparent;
+  color: #aaa;
+  font-size: 20px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+#btn-howto-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+#howto-slides {
+  position: relative;
+  width: 100%;
+}
+
+.howto-img {
+  display: none;
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.howto-img.active { display: block; }
+
+#howto-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#howto-nav button {
+  font-size: 26px;
+  padding: 2px 14px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+#howto-page {
+  font-size: 14px;
+  color: #ccc;
+  min-width: 48px;
+  text-align: center;
+}
+
+/* ─── Dialogs ────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 10;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1e2340;
+  border: 1px solid #3a4070;
+  border-radius: 12px;
+  padding: 28px 36px;
+  z-index: 20;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  min-width: 220px;
+}
+
+.dialog p {
+  font-size: 18px;
+  margin-bottom: 18px;
+}
+
+.dialog button {
+  margin: 0 8px;
+  min-width: 90px;
+  padding: 8px 16px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 620px) {
+  :root { --cell: 38px; }
+  .col-labels span { font-size: 10px; }
+  .row-labels span { font-size: 10px; }
+  .hand-label { min-width: 60px; font-size: 11px; }
+}
