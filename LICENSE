@@ -10,23 +10,34 @@ of this license document, but changing it is not allowed.
   The GNU General Public License is a free, copyleft license for
 software and other kinds of works.
 
-  For the complete license text, see:
-  https://www.gnu.org/licenses/gpl-3.0.txt
+  For the precise terms and conditions for copying, distribution and
+modification, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
+
+                       TERMS AND CONDITIONS
+
+  0. Definitions.
+
+  "This License" refers to version 3 of the GNU General Public License.
+
+  "The Program" refers to any copyrightable work licensed under this License.
+
+  For the full license text, see https://www.gnu.org/licenses/gpl-3.0.txt
 
 -------------------------------------------------------------------------------
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+This project is distributed under the GNU General Public License v3.0 or later.
+
 THIRD-PARTY COMPONENTS
--------------------------------------------------------------------------------
+----------------------
 
 This project includes the following GPL-3.0 licensed components:
 
-  YaneuraOu.wasm (by mizar)
-  - Source: https://github.com/mizar/YaneuraOu.wasm
-  - License: GPL-3.0
+  @mizarjp/yaneuraou.k-p — YaneuraOu shogi engine compiled to WebAssembly
+  Source : https://github.com/mizar/YaneuraOu.wasm
+  License: GPL-3.0
 
-  @mizarjp/yaneuraou.k-p (npm package wrapping YaneuraOu.wasm)
-  - Source: https://github.com/mizar/YaneuraOu.wasm
-  - License: GPL-3.0
-
-In accordance with the GPL-3.0 license, this project as a whole is
-distributed under GPL-3.0. The full license text is available at:
+In compliance with the GPL-3.0, the source code of this project is made
+available at the repository URL. The full license text is available at:
 https://www.gnu.org/licenses/gpl-3.0.txt
