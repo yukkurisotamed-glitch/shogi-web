@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>将棋 CPU 対戦</title>
+  <title>Chess-Style Shogi — Free Browser Game</title>
+  <meta name="description" content="Play chess-style shogi for free. Chess piece shapes meet Japanese rules. 8 languages, 12 difficulty levels. No kanji needed." />
+  <meta property="og:title" content="Chess-Style Shogi — Free Browser Game" />
+  <meta property="og:description" content="Chess silhouettes meet Japanese strategy. Play shogi in your browser — no kanji needed." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://shogi-web-b40f4.web.app" />
+  <meta property="og:image" content="https://shogi-web-b40f4.web.app/pieces/normal/%E7%99%BD%E3%82%AD%E3%83%B3%E3%82%B0.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Chess-Style Shogi — Free Browser Game" />
+  <meta name="twitter:description" content="Chess silhouettes meet Japanese strategy. Play shogi free — no kanji needed." />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
@@ -39,6 +48,9 @@
           <option value="zh">🇨🇳 中文</option>
           <option value="ko">🇰🇷 한국어</option>
           <option value="es">🇪🇸 Español</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="de">🇩🇪 Deutsch</option>
         </select>
       </div>
     </header>
@@ -76,6 +88,7 @@
 
     <!-- Product section -->
     <section id="product-banner">
+      <div id="product-badge">🎲 手作り — Handcrafted Set</div>
       <div id="product-content">
         <div id="product-img-wrap">
           <img src="/pieces/normal/白キング.png" alt="Chess-Shogi piece" id="product-img" />
@@ -83,7 +96,7 @@
         <div id="product-text">
           <h2 data-i18n="productHeading">物理セットで遊ぼう</h2>
           <p data-i18n="productDesc">チェス駒シルエット × 和の装束。本物の駒で対局するならこちら。</p>
-          <a id="product-link" href="YOUR_ETSY_URL" target="_blank" rel="noopener">
+          <a id="product-link" href="https://www.etsy.com/listing/4514605767?utm_source=shogi_web&utm_medium=footer&utm_campaign=product_banner" target="_blank" rel="noopener">
             <span data-i18n="productBtn">Etsy で見る</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
@@ -118,6 +131,11 @@
 
     <div id="end-dialog" class="dialog hidden">
       <p id="end-message"></p>
+      <div id="end-etsy-cta">
+        <img src="/pieces/normal/白キング.png" alt="" />
+        <p data-i18n="productHeading">物理セットで遊ぼう</p>
+        <a href="https://www.etsy.com/listing/4514605767?utm_source=shogi_web&utm_medium=game_end&utm_campaign=win_cta" target="_blank" rel="noopener" data-i18n="productBtn">Etsy で見る</a>
+      </div>
       <button id="btn-end-ok" data-i18n="playAgain">もう一度</button>
     </div>
   </div>
