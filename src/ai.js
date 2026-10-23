@@ -234,9 +234,9 @@ function openingBookMove(game) {
 }
 
 // ── Iterative deepening ────────────────────────────────────────────
-export function bestMoveWithTime(game, movetime, maxDepth=15, noise=0) {
-  // Try opening book first (only for 中級3 and above, i.e. noise===0)
-  if (noise === 0) {
+export function bestMoveWithTime(game, movetime, maxDepth=15, noise=0, randomRate=0) {
+  // Try opening book first (only for levels with no randomRate)
+  if (randomRate === 0 && noise === 0) {
     const bookMove = openingBookMove(game);
     if (bookMove) return bookMove;
   }
@@ -248,6 +248,12 @@ export function bestMoveWithTime(game, movetime, maxDepth=15, noise=0) {
   const moves = game.legalMoves();
   if (!moves.length) return null;
   if (moves.length === 1) return moves[0];
+
+  // Probabilistic random move — more predictable than noise-based approach
+  if (randomRate > 0 && Math.random() < randomRate) {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
   if (noise > 800) return moves[Math.floor(Math.random()*moves.length)];
 
   moves.sort((a,b) => moveScore(game,b,0) - moveScore(game,a,0));

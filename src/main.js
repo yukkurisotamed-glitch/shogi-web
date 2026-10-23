@@ -25,36 +25,30 @@ let engineReady = false;
 
 // Fallback: custom AI Web Worker (エンジン起動前に使用)
 const aiWorker = new Worker(new URL('./ai-worker.js', import.meta.url), { type: 'module' });
-aiWorker.onmessage = (e) => {
-  aiThinking = false;
-  const move = e.data;
-  if (move) game.applyMove(move);
-  render();
-  checkEnd();
-};
 
 // engine: true → YaneuraOu, false → 独自AI
 // depth: YaneuraOu の探索深さ上限, movetime: 思考時間上限(ms)
 // maxDepth/noise: 独自AI用
 const DEPTH_MAP = {
-  d1:  { engine: false, movetime:  200, maxDepth: 1, noise: 900 }, // 入門1: ほぼランダム
-  d2:  { engine: false, movetime:  300, maxDepth: 1, noise: 600 }, // 入門2
-  d3:  { engine: false, movetime:  500, maxDepth: 2, noise: 350 }, // 入門3
-  d4:  { engine: true,  depth: 1, movetime: 5000 },                // 初級1: YaneuraOu depth1
-  d5:  { engine: true,  depth: 2, movetime: 5000 },                // 初級2
-  d6:  { engine: true,  depth: 3, movetime: 5000 },                // 初級3
-  d7:  { engine: true,  depth: 4, movetime: 8000 },                // 中級1
-  d8:  { engine: true,  depth: 5, movetime: 8000 },                // 中級2
-  d9:  { engine: true,  depth: 7, movetime: 10000 },               // 中級3
-  d10: { engine: true,  movetime: 3000  },                         // 上級1: フル思考
-  d12: { engine: true,  movetime: 7000  },                         // 上級2
-  d15: { engine: true,  movetime: 15000 },                         // 上級3
+  d1:  { engine: false, movetime:  300, maxDepth: 2,  noise: 0, randomRate: 0.95 }, // 入門1: 95%ランダム
+  d2:  { engine: false, movetime:  400, maxDepth: 2,  noise: 0, randomRate: 0.78 }, // 入門2: 78%ランダム
+  d3:  { engine: false, movetime:  500, maxDepth: 3,  noise: 0, randomRate: 0.55 }, // 入門3: 55%ランダム
+  d4:  { engine: false, movetime:  700, maxDepth: 3,  noise: 0, randomRate: 0.30 }, // 初級1: 30%ランダム
+  d5:  { engine: false, movetime: 1200, maxDepth: 4,  noise: 0, randomRate: 0.12 }, // 初級2: 12%ランダム
+  d6:  { engine: false, movetime: 2000, maxDepth: 5,  noise: 0, randomRate: 0.03 }, // 初級3: 3%ランダム
+  d7:  { engine: true,  depth: 1, movetime: 1500, randomRate: 0.70 },               // 中級1: YaneuraOu + 70%ランダム
+  d8:  { engine: true,  depth: 1, movetime: 3000, randomRate: 0.48 },               // 中級2: YaneuraOu + 48%ランダム
+  d9:  { engine: true,  depth: 1, movetime: 5000, randomRate: 0.22 },               // 中級3: YaneuraOu + 22%ランダム
+  d10: { engine: true,  depth: 1, movetime: 5000 },                                 // 上級1: YaneuraOu depth1
+  d12: { engine: true,  depth: 3, movetime: 8000 },                                 // 上級2: YaneuraOu depth3
+  d15: { engine: true,  movetime: 5000 },                                            // 上級3: フル思考
 };
 
 let selected = null;
 let legalDests = [];
 let pendingPromote = null;
 let aiThinking = false;
+let lastMove = null; // { fromR, fromC, toR, toC } or { drop, toR, toC }
 
 const boardEl       = document.getElementById('board');
 const turnLabel     = document.getElementById('turn-label');
@@ -169,6 +163,12 @@ function renderBoard() {
       const raw = board[r][c];
       const key = `${r}-${c}`;
 
+      if (lastMove) {
+        if (!lastMove.drop && lastMove.fromR === r && lastMove.fromC === c)
+          cell.classList.add('last-from');
+        if (lastMove.toR === r && lastMove.toC === c)
+          cell.classList.add('last-to');
+      }
       if (selected && !selected.drop && selected.fromR === r && selected.fromC === c)
         cell.classList.add('selected');
       if (legalSet.has(key))
@@ -301,6 +301,7 @@ function askPromote(noMove, yesMove) {
 
 function commitMove(move) {
   clearSelection();
+  lastMove = move;
   game.applyMove(move);
   render();
   checkEnd();
@@ -320,35 +321,54 @@ btnPromoteNo.addEventListener('click', () => {
   if (pendingPromote) { commitMove(pendingPromote.noMove); pendingPromote = null; }
 });
 
+const MIN_AI_WAIT = 1500; // CPUが早く読み終わっても最低1.5秒待つ
+
 function scheduleAI() {
   if (game.turn !== -1) return;
   aiThinking = true;
   updateStatus();
   const levelVal = selLevel?.value || 'd7';
   const cfg = DEPTH_MAP[levelVal] ?? { engine: true, movetime: 3000 };
+  const startTime = Date.now();
+
+  const applyAfterWait = (move) => {
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, MIN_AI_WAIT - elapsed);
+    setTimeout(() => {
+      aiThinking = false;
+      if (move) { lastMove = move; game.applyMove(move); }
+      render();
+      checkEnd();
+    }, remaining);
+  };
 
   if (engineReady && cfg.engine) {
-    // YaneuraOu K-P（初級〜上級）
+    // YaneuraOu K-P（中級〜上級）
     engine.getBestMove(
       game.board.map(r => [...r]),
       { '1': { ...game.hand['1'] }, '-1': { ...game.hand['-1'] } },
       game.turn,
       { depth: cfg.depth, movetime: cfg.movetime },
     ).then(move => {
-      aiThinking = false;
-      if (move) game.applyMove(move);
-      render();
-      checkEnd();
+      // randomRate: エンジン応手をランダム手に差し替える確率
+      const rr = cfg.randomRate ?? 0;
+      if (rr > 0 && Math.random() < rr) {
+        const rand = game.legalMoves();
+        if (rand.length > 0) move = rand[Math.floor(Math.random() * rand.length)];
+      }
+      applyAfterWait(move);
     });
   } else {
     // 独自AI（入門レベル、またはエンジン未起動時）
+    aiWorker.onmessage = (e) => applyAfterWait(e.data);
     aiWorker.postMessage({
       board: game.board.map(r => [...r]),
       hand: { '1': { ...game.hand['1'] }, '-1': { ...game.hand['-1'] } },
       turn: game.turn,
-      movetime: cfg.movetime ?? 2000,
-      maxDepth: cfg.maxDepth ?? 4,
-      noise:    cfg.noise    ?? 0,
+      movetime:   cfg.movetime   ?? 2000,
+      maxDepth:   cfg.maxDepth   ?? 4,
+      noise:      cfg.noise      ?? 0,
+      randomRate: cfg.randomRate ?? 0,
     });
   }
 }
@@ -371,7 +391,7 @@ btnEndOk.addEventListener('click', () => {
   overlay.classList.add('hidden');
   endDialog.classList.add('hidden');
   game.reset();
-  selected = null; legalDests = []; aiThinking = false;
+  selected = null; legalDests = []; aiThinking = false; lastMove = null;
   render();
 });
 
@@ -379,12 +399,14 @@ btnUndo.addEventListener('click', () => {
   if (aiThinking) return;
   game.undo();
   if (game.turn !== 1 && game.history.length > 0) game.undo();
+  lastMove = game.history.at(-1) ?? null;
   clearSelection();
 });
 
 btnReset.addEventListener('click', () => {
   if (!confirm(t('confirmReset'))) return;
   aiThinking = false;
+  lastMove = null;
   engine.newGame();
   game.reset();
   clearSelection();

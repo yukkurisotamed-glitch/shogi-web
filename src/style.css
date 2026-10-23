@@ -175,9 +175,11 @@ main {
   overflow: hidden;
 }
 
-.cell.selected { background: var(--highlight-sel); }
-.cell.legal    { background: var(--highlight-legal); }
-.cell.check    { background: var(--highlight-check); }
+.cell.last-from { background: rgba(255, 210, 50, 0.35); }
+.cell.last-to   { background: rgba(255, 210, 50, 0.6); }
+.cell.selected  { background: var(--highlight-sel); }
+.cell.legal     { background: var(--highlight-legal); }
+.cell.check     { background: var(--highlight-check); }
 
 
 /* ─── Piece images ───────────────────────────────────────────── */
@@ -275,51 +277,74 @@ main {
 }
 
 /* ─── Product banner ─────────────────────────────────────────── */
+@keyframes banner-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(241,101,33,0.4), 0 0 32px rgba(241,101,33,0.15); }
+  50%       { box-shadow: 0 0 20px rgba(241,101,33,0.7), 0 0 48px rgba(241,101,33,0.25); }
+}
+@keyframes btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+
 #product-banner {
   width: 100%;
   max-width: calc(9 * var(--cell) + 32px + 28px);
-  margin: 8px 0 20px;
-  padding: 20px 24px 12px;
-  background: linear-gradient(135deg, #1e2340 0%, #16213e 100%);
-  border: 1px solid #3a4070;
-  border-radius: 12px;
+  margin: 16px 0 24px;
+  padding: 24px 28px 14px;
+  background: linear-gradient(135deg, #2a1a0e 0%, #1e1206 60%, #2a1a0e 100%);
+  border: 2px solid #f16521;
+  border-radius: 14px;
+  animation: banner-glow 3s ease-in-out infinite;
+}
+
+#product-badge {
+  display: inline-block;
+  background: #f16521;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
 }
 
 #product-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 #product-img-wrap {
   flex-shrink: 0;
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
   background: var(--board-bg);
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 #product-img {
-  width: 56px;
-  height: 56px;
+  width: 76px;
+  height: 76px;
   object-fit: contain;
   filter: url(#piece-outline);
 }
 
 #product-text h2 {
-  font-size: 16px;
+  font-size: 18px;
   color: #fff;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 #product-text p {
   font-size: 13px;
-  color: #aaa;
-  margin-bottom: 12px;
-  line-height: 1.5;
+  color: #ccc;
+  margin-bottom: 14px;
+  line-height: 1.6;
 }
 
 #product-link {
@@ -329,13 +354,18 @@ main {
   background: #f16521;
   color: #fff;
   text-decoration: none;
-  padding: 7px 16px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: bold;
   transition: background 0.15s;
+  animation: btn-pulse 2.5s ease-in-out infinite;
 }
-#product-link:hover { background: #d4541a; }
+#product-link:hover {
+  background: #d4541a;
+  animation: none;
+  transform: scale(1.05);
+}
 
 #product-credit {
   margin-top: 12px;
@@ -454,6 +484,44 @@ main {
   min-width: 90px;
   padding: 8px 16px;
 }
+
+/* ─── End-dialog Etsy CTA ────────────────────────────────────── */
+#end-etsy-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 16px;
+  padding: 14px 16px;
+  background: rgba(241,101,33,0.12);
+  border: 1px solid rgba(241,101,33,0.4);
+  border-radius: 10px;
+}
+
+#end-etsy-cta img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+#end-etsy-cta p {
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 0;
+}
+
+#end-etsy-cta a {
+  display: inline-block;
+  background: #f16521;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background 0.15s;
+}
+#end-etsy-cta a:hover { background: #d4541a; }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 620px) {
